@@ -1,3 +1,3 @@
-from .parse import PklParserBase, PklParserMask
+from .parse import PklParserBase, PklParserMask, PklParserMaskOBB
 
-__all__ = ['PklParserBase', 'PklParserMask']
+__all__ = ['PklParserBase', 'PklParserMask', 'PklParserMaskOBB']

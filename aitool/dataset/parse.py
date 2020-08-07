@@ -99,3 +99,39 @@ class PklParserMask(PklParserBase):
                 objects.append(data)
 
         return objects
+
+
+class PklParserMaskOBB(PklParserBase):
+    def _convert_items(self, result):
+        """convert the result (single image) in pkl file to specific format (Mask OBB, bbox + maskobb) 
+
+        Args:
+            result (tuple): detection result of single image
+
+        Return:
+            list: converted objects
+        """
+        objects = []
+
+        det, seg = result
+        for label in range(len(det)):
+            bboxes = det[label]
+            if isinstance(seg, tuple):
+                segms = seg[0][label]
+            else:
+                segms = seg[label]
+
+            for i in range(bboxes.shape[0]):
+                data = dict()
+                data['bbox'] = aitool.xyxy2xywh(bboxes[i][:4])
+                data['score'] = float(bboxes[i][4])
+                data['category_id'] = self.cat_ids[label]
+                if isinstance(segms[i]['counts'], bytes):
+                    segms[i]['counts'] = segms[i]['counts'].decode()
+                data['segmentation'] = segms[i]
+                thetaobb, pointobb = aitool.segm2rbbox(segms[i])
+                data['thetaobb'] = thetaobb
+                data['pointobb'] = pointobb
+                objects.append(data)
+
+        return objects
