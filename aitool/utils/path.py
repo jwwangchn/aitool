@@ -29,3 +29,19 @@ def get_file_paths(path, postfix='.png'):
     file_list = glob.glob(f"{path}/*{postfix}")
 
     return file_list
+
+def mkdir_or_exist(dir_name, mode=0o777):
+    """make or judge the exist of dir
+
+    Args:
+        dir_name (str): input dir
+        mode (int, optional): inout mode. Defaults to 0o777.
+    """
+    if dir_name == '':
+        return
+    dir_name = os.path.expanduser(dir_name)
+    if six.PY3:
+        os.makedirs(dir_name, mode=mode, exist_ok=True)
+    else:
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name, mode=mode)
