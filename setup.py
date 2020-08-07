@@ -26,7 +26,6 @@ SHORT_VERSION = '{}.{}.{}{}'.format(MAJOR, MINOR, PATCH, SUFFIX)
 
 version_file = 'aitool/version.py'
 
-
 def get_git_hash():
 
     def _minimal_ext_cmd(cmd):
@@ -52,7 +51,6 @@ def get_git_hash():
 
     return sha
 
-
 def get_hash():
     if os.path.exists('.git'):
         sha = get_git_hash()[:7]
@@ -66,7 +64,6 @@ def get_hash():
         sha = 'unknown'
 
     return sha
-
 
 def write_version_py():
     content = """# GENERATED VERSION FILE
