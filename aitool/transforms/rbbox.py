@@ -45,3 +45,39 @@ def thetaobb2pointobb(thetaobb):
     pointobb = [box[0], box[1], box[2], box[3], box[4], box[5], box[6], box[7]]
 
     return pointobb
+
+def pointobb2bbox(pointobb):
+    """convert pointobb to bbox
+
+    Args:
+        pointobb (list): [x1, y1, x2, y2, x3, y3, x4, y4]
+
+    Returns:
+        list: [xmin, ymin, xmax, ymax]
+    """
+    xmin = min(pointobb[0::2])
+    ymin = min(pointobb[1::2])
+    xmax = max(pointobb[0::2])
+    ymax = max(pointobb[1::2])
+    bbox = [xmin, ymin, xmax, ymax]
+    
+    return bbox
+
+def bbox2pointobb(bbox):
+    """convert bbox to pointobb
+
+    Args:
+        bbox (list): [xmin, ymin, xmax, ymax]
+
+    Returns:
+        list: [x1, y1, x2, y2, x3, y3, x4, y4]
+    """
+    xmin, ymin, xmax, ymax = bbox
+    x1, y1 = xmin, ymin
+    x2, y2 = xmax, ymin
+    x3, y3 = xmax, ymax
+    x4, y4 = xmin, ymax
+
+    pointobb = [x1, y1, x2, y2, x3, y3, x4, y4]
+    
+    return pointobb

@@ -96,6 +96,7 @@ class PklParserMask(PklParserBase):
                 if isinstance(segms[i]['counts'], bytes):
                     segms[i]['counts'] = segms[i]['counts'].decode()
                 data['segmentation'] = segms[i]
+                data['pointobb'] = aitool.bbox2pointobb(data['bbox'])
                 objects.append(data)
 
         return objects

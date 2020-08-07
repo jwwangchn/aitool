@@ -1,5 +1,6 @@
 import os
 import glob
+import six
 
 
 def get_basename(file_path):
