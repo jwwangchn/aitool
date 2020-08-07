@@ -67,11 +67,11 @@ def get_hash():
 
 def write_version_py():
     content = """# GENERATED VERSION FILE
-    # TIME: {}
+# TIME: {}
 
-    __version__ = '{}'
-    short_version = '{}'
-    """
+__version__ = '{}'
+short_version = '{}'
+"""
     sha = get_hash()
     VERSION = SHORT_VERSION + '+' + sha
 
