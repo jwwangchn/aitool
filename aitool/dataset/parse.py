@@ -203,5 +203,5 @@ class COCOParser():
         if image_fn in self.objects.keys():
             return self.objects[image_fn]
         else:
-            print("{} is not in pkl".format(image_fn))
+            print("{} is not in coco file".format(image_fn))
             return []
