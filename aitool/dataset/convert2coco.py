@@ -21,10 +21,15 @@ class Convert2COCO():
                 categories=None,
                 img_size=None,
                 with_groundtruth=True,
-                min_area=10):
+                min_area=10,
+                k_fold=0):
         self.image_dir = image_dir
         self.label_dir = label_dir
         self.imageset_file = imageset_file
+        self.dataset_info = dataset_info
+        self.dataset_licenses = dataset_licenses
+        self.dataset_type = dataset_type
+        self.categories = categories
 
         self.image_format = image_format
         self.label_format = label_format
@@ -36,23 +41,42 @@ class Convert2COCO():
         self.max_object_num_per_image = 0
         self.min_object_area = 2048 * 2048
 
-        self.image_list = self._get_image_list()
-        
-        images, annotations = self._get_image_annotation_pairs()
+        image_list = self._get_image_list(k_fold=k_fold)
 
-        if categories is None:
+        if k_fold == 0:
+            self._dump_coco_json(image_list, output_file)
+        else:
+            for fold_idx in range(k_fold):
+                sub_image_list = image_list[fold_idx]
+
+                val_output_file = output_file[0:-5] + f'_K{fold_idx + 1}' + output_file[-5:]
+                self._dump_coco_json(sub_image_list, val_output_file)
+
+    def _dump_coco_json(self, image_list, output_file):
+        images, annotations = self._get_image_annotation_pairs(image_list)
+        if self.categories is None:
             raise RuntimeError("please input the coco categories")
-        json_data = {"info": dataset_info,
-                     "images": images,
-                     "licenses": dataset_licenses,
-                     "type": dataset_type,
-                     "annotations": annotations,
-                     "categories" : categories}
-
+        json_data = {"info": self.dataset_info,
+                    "images": images,
+                    "licenses": self.dataset_licenses,
+                    "type": self.dataset_type,
+                    "annotations": annotations,
+                    "categories" : self.categories}
+        
         with open(output_file, "w") as jsonfile:
-            json.dump(json_data, jsonfile, sort_keys=True, indent=4)
+            json.dump(json_data, jsonfile, sort_keys=True, indent=4)        
 
-    def _get_image_list(self):
+    def _split_image_list(self, image_list, k_fold):
+        length = len(image_list)
+        step = length // k_fold
+        result = []
+        for idx in range(0, length, step):
+            splitted_list = image_list[idx: idx + step]
+            result.append(splitted_list)
+
+        return result
+
+    def _get_image_list(self, k_fold=0):
         if self.imageset_file is not None:
             print(f"loading image list from imageset file: {self.imageset_file}")
             raise NotImplementedError
@@ -62,13 +86,18 @@ class Convert2COCO():
             image_file_list = aitool.get_file_list(self.image_dir, self.image_format)
             image_list = [aitool.get_basename(image_file) for image_file in image_file_list]
             image_list.sort()
+            random.shuffle(image_list)
         
-        return image_list
+        if k_fold == 0:
+            return image_list
+        else:
+            splitted_image_list = self._split_image_list(image_list, k_fold)
+            return splitted_image_list
 
-    def _get_image_annotation_pairs(self):
+    def _get_image_annotation_pairs(self, image_list):
         images, annotations = [], []
         ann_idx = 0
-        for img_idx, image_basename in enumerate(tqdm.tqdm(self.image_list)):
+        for img_idx, image_basename in enumerate(tqdm.tqdm(image_list)):
             image_file = os.path.join(self.image_dir, image_basename + self.image_format)
             label_file = os.path.join(self.label_dir, image_basename + self.label_format)
 
@@ -114,8 +143,8 @@ class Convert2COCO():
             if len(objects) > self.max_object_num_per_image:
                 self.max_object_num_per_image = len(objects)
 
-            if img_idx % (len(self.image_list) // 20) == 0 or img_idx == len(self.image_list) - 1:
-                if img_idx == len(self.image_list) - 1:
+            if img_idx % (len(image_list) // 20) == 0 or img_idx == len(image_list) - 1:
+                if img_idx == len(image_list) - 1:
                     print("Summary: ")
                 print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Number: {self.max_object_num_per_image}, Min Object Area: {self.min_object_area}")
 

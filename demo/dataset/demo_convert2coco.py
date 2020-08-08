@@ -33,9 +33,11 @@ class Convert2COCO_Plane(aitool.Convert2COCO):
 
 
 if __name__ == "__main__":
-    image_dir = '/data/plane/v1/train/images'
-    label_dir = '/data/plane/v1/train/labels'
-    output_file = '/data/plane/v1/text.json'
+    image_dir = './data/plane/v1/train/images'
+    label_dir = './data/plane/v1/train/labels'
+    output_file = './data/plane/v1/coco/annotations/plane_train.json'
+
+    k_fold = 5
 
     image_format, label_format = '.tif', '.xml'
 
@@ -58,7 +60,8 @@ if __name__ == "__main__":
                        image_format=image_format, 
                        label_format=label_format,
                        img_size=(1024, 1024),
-                       categories=coco_classes)
+                       categories=coco_classes,
+                       k_fold=k_fold)
 
 
     
