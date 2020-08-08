@@ -13,7 +13,7 @@ def segm2rbbox(segms):
         list: pointobb and thetaobb
     """
     mask = maskUtils.decode(segms).astype(np.bool)
-    gray = np.array(mask*255, dtype=np.uint8)
+    gray = np.array(mask * 255, dtype=np.uint8)
     
     contours = cv2.findContours(gray.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = contours[0] if len(contours) == 2 else contours[1]

@@ -13,8 +13,10 @@ class PklParserBase():
     def __init__(self,
                  pkl_file,
                  ann_file,
-                 score_threshold=0.05):
+                 score_threshold=0.05,
+                 min_area=10):
         self.score_threshold = score_threshold
+        self.min_area = min_area
 
         if isinstance(pkl_file, str):
             results = mmcv.load(pkl_file)
@@ -54,6 +56,8 @@ class PklParserBase():
             for i in range(bboxes.shape[0]):
                 data = dict()
                 data['bbox'] = aitool.xyxy2xywh(bboxes[i][:4])
+                if data['bbox'][2] * data['bbox'][3] < self.min_area:
+                    continue
                 data['score'] = float(bboxes[i][4])
                 if data['score'] < self.score_threshold:
                     continue
@@ -93,6 +97,8 @@ class PklParserMask(PklParserBase):
             for i in range(bboxes.shape[0]):
                 data = dict()
                 data['bbox'] = aitool.xyxy2xywh(bboxes[i][:4])
+                if data['bbox'][2] * data['bbox'][3] < self.min_area:
+                    continue
                 data['score'] = float(bboxes[i][4])
                 if data['score'] < self.score_threshold:
                     continue
@@ -129,6 +135,8 @@ class PklParserMaskOBB(PklParserBase):
             for i in range(bboxes.shape[0]):
                 data = dict()
                 data['bbox'] = aitool.xyxy2xywh(bboxes[i][:4])
+                if data['bbox'][2] * data['bbox'][3] < self.min_area:
+                    continue
                 data['score'] = float(bboxes[i][4])
                 if data['score'] < self.score_threshold:
                     continue

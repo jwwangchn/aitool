@@ -81,7 +81,7 @@ class XMLDumperPlane(XMLDumperBase):
             for idx in range(5):
                 if idx == 4:
                     idx = 0
-                ET.SubElement(points, "point").text = str(pointobb[2 * idx : 2 * idx+ 2])
+                ET.SubElement(points, "point").text = f"{pointobb[2 * idx]},{pointobb[2 * idx + 1]}"
             
         tree = ET.ElementTree(root)
         tree.write(f"{self.output_dir}/{basename}.xml", pretty_print=True, xml_declaration=True, encoding='utf-8')

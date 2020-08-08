@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     pkl_parser = aitool.PklParserMask(pkl_file, ann_file)
 
-    image_list = aitool.get_file_paths(img_dir, '.tif')
+    image_list = aitool.get_file_list(img_dir, '.tif')
 
     for image_file in image_list:
         basename = aitool.get_basename(image_file)

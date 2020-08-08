@@ -16,7 +16,7 @@ def get_basename(file_path):
 
     return basename
 
-def get_file_paths(path, postfix='.png'):
+def get_file_list(path, postfix='.png'):
     """get specific file path from the input path
 
     Args:
