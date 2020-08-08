@@ -46,3 +46,16 @@ def mkdir_or_exist(dir_name, mode=0o777):
     else:
         if not os.path.isdir(dir_name):
             os.makedirs(dir_name, mode=mode)
+
+def get_dir_name(file_path):
+    """get the dir name
+
+    Args:
+        file_path (str): input path of file
+
+    Returns:
+        str: dir name
+    """
+    dir_name = os.path.abspath(os.path.dirname(file_path))
+
+    return dir_name

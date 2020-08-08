@@ -76,12 +76,12 @@ class XMLDumperPlane(XMLDumperBase):
             ET.SubElement(possibleresult, "probability").text = str(data['score'])
 
             points = ET.SubElement(obj, "points")
-            pointobbbox = data['pointobb']
+            pointobb = data['pointobb']
 
             for idx in range(5):
                 if idx == 4:
                     idx = 0
-                ET.SubElement(points, "point").text = str(pointobbbox[2 * idx : 2 * idx+ 2])
+                ET.SubElement(points, "point").text = str(pointobb[2 * idx : 2 * idx+ 2])
             
         tree = ET.ElementTree(root)
         tree.write(f"{self.output_dir}/{basename}.xml", pretty_print=True, xml_declaration=True, encoding='utf-8')

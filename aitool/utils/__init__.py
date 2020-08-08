@@ -1,3 +1,3 @@
-from .path import get_basename, get_file_paths, mkdir_or_exist
+from .path import get_basename, get_file_paths, mkdir_or_exist, get_dir_name
 
-__all__ = ['get_basename', 'get_file_paths', 'mkdir_or_exist']
+__all__ = ['get_basename', 'get_file_paths', 'mkdir_or_exist', 'get_dir_name']

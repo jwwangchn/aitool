@@ -55,6 +55,8 @@ class PklParserBase():
                 data = dict()
                 data['bbox'] = aitool.xyxy2xywh(bboxes[i][:4])
                 data['score'] = float(bboxes[i][4])
+                if data['score'] < self.score_threshold:
+                    continue
                 data['category_id'] = self.cat_ids[label]
                 objects.append(data)
 
@@ -92,11 +94,13 @@ class PklParserMask(PklParserBase):
                 data = dict()
                 data['bbox'] = aitool.xyxy2xywh(bboxes[i][:4])
                 data['score'] = float(bboxes[i][4])
+                if data['score'] < self.score_threshold:
+                    continue
                 data['category_id'] = self.cat_ids[label]
                 if isinstance(segms[i]['counts'], bytes):
                     segms[i]['counts'] = segms[i]['counts'].decode()
                 data['segmentation'] = segms[i]
-                data['pointobb'] = aitool.bbox2pointobb(data['bbox'])
+                data['pointobb'] = aitool.bbox2pointobb(bboxes[i][:4])
                 objects.append(data)
 
         return objects
@@ -126,6 +130,8 @@ class PklParserMaskOBB(PklParserBase):
                 data = dict()
                 data['bbox'] = aitool.xyxy2xywh(bboxes[i][:4])
                 data['score'] = float(bboxes[i][4])
+                if data['score'] < self.score_threshold:
+                    continue
                 data['category_id'] = self.cat_ids[label]
                 if isinstance(segms[i]['counts'], bytes):
                     segms[i]['counts'] = segms[i]['counts'].decode()
@@ -136,3 +142,47 @@ class PklParserMaskOBB(PklParserBase):
                 objects.append(data)
 
         return objects
+
+
+class COCOParser():
+    def __init__(self, 
+                 ann_file, 
+                 classes=[''],
+                 data_keys=['bbox', 'category_id', 'segmentation']):
+        self.data_keys = data_keys
+        self.coco = COCO(ann_file)
+        self.img_ids = self.coco.get_img_ids()
+        self.cat_ids = self.coco.get_cat_ids()
+        self.img_fns = []
+
+        self.objects = dict()
+        for img_id in self.img_ids:
+            info = self.coco.load_imgs([img_id])[0]
+            img_name = aitool.get_basename(info['file_name'])
+            self.img_fns.append(img_name)
+
+            ann_ids = self.coco.get_ann_ids(img_ids=[img_id])
+            ann_info = self.coco.load_anns(ann_ids)
+            self.objects[img_name] = self._convert_items(ann_info)
+    
+    def _convert_items(self, ann_info):
+        objects = []
+
+        for ann in ann_info:
+            data = dict()
+            for data_key in self.data_keys:
+                if data_key in ann:
+                    data[data_key] = ann[data_key]
+                else:
+                    raise RuntimeError(f'coco ann file does not contain {data_key}')
+
+            objects.append(data)
+
+        return objects
+
+    def __call__(self, image_fn):
+        if image_fn in self.objects.keys():
+            return self.objects[image_fn]
+        else:
+            print("{} is not in pkl".format(image_fn))
+            return []
