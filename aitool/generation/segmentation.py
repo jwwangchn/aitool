@@ -28,11 +28,15 @@ class GenerateSegBase():
             self._segmentation2png(objects, png_file, binary=binary)
 
     def _segmentation2png(self, objects, png_file, binary=True):
+        if binary:
+            foreground_color = 0
+        else:
+            foreground_color = (0, 0, 0)
         if len(objects) != 0:
             img_height, img_width = objects[0]['img_height'], objects[0]['img_width']
-            foreground = aitool.generate_image(img_height, img_width, (0, 0, 0))
+            foreground = aitool.generate_image(img_height, img_width, foreground_color)
         else:
-            foreground = aitool.generate_image(1024, 1024, (0, 0, 0))
+            foreground = aitool.generate_image(1024, 1024, foreground_color)
 
         objects = self._sort_objects(objects, mode=self.sort_mode)
         for idx, data in enumerate(objects):
@@ -60,7 +64,7 @@ class GenerateSegBase():
 
     def _label2color(self, label, index, binary=True):
         if binary:
-            color = (label, label, label)
+            color = label
         else:
             color_list = list(aitool.COLORS.keys())
             color = (aitool.COLORS[color_list[index % 20]][2], aitool.COLORS[color_list[index % 20]][1], aitool.COLORS[color_list[index % 20]][0])
