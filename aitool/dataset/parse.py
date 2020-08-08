@@ -149,25 +149,34 @@ class COCOParser():
                  ann_file, 
                  classes=[''],
                  data_keys=['bbox', 'category_id', 'segmentation']):
+        """parse coco annotation file
+
+        Args:
+            ann_file (str): coco annotation file
+            classes (list, optional): class ids. Defaults to [''].
+            data_keys (list, optional): parse which items. Defaults to ['bbox', 'category_id', 'segmentation'].
+        """
         self.data_keys = data_keys
         self.coco = COCO(ann_file)
         self.img_ids = self.coco.get_img_ids()
         self.cat_ids = self.coco.get_cat_ids()
         self.img_fns = []
 
+        print("begin to parse the coco annotation file")
         self.objects = dict()
-        for img_id in self.img_ids:
-            info = self.coco.load_imgs([img_id])[0]
-            img_name = aitool.get_basename(info['file_name'])
+        for img_id in tqdm.tqdm(self.img_ids):
+            img_info = self.coco.load_imgs([img_id])[0]
+            img_name = aitool.get_basename(img_info['file_name'])
             self.img_fns.append(img_name)
 
             ann_ids = self.coco.get_ann_ids(img_ids=[img_id])
             ann_info = self.coco.load_anns(ann_ids)
-            self.objects[img_name] = self._convert_items(ann_info)
+            self.objects[img_name] = self._convert_items(ann_info, img_info)
     
-    def _convert_items(self, ann_info):
+    def _convert_items(self, ann_info, img_info):
         objects = []
 
+        img_height, img_width = img_info['height'], img_info['width']
         for ann in ann_info:
             data = dict()
             for data_key in self.data_keys:
@@ -176,6 +185,8 @@ class COCOParser():
                 else:
                     raise RuntimeError(f'coco ann file does not contain {data_key}')
 
+            data['img_height'], data['img_width'] = img_height, img_width
+            
             objects.append(data)
 
         return objects
