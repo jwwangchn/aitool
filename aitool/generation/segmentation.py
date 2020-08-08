@@ -11,6 +11,7 @@ class GenerateSegBase():
     def __init__(self, 
                  ann_file,
                  output_dir,
+                 output_format='.png',
                  seg_key='segmentation',
                  binary=True,
                  sort_mode='keep_small'):
@@ -21,7 +22,7 @@ class GenerateSegBase():
 
         print("begin to convert segmentation to png file")
         for img_fn in tqdm.tqdm(coco_parser.img_fns):
-            png_file = os.path.join(output_dir, img_fn + '.png')
+            png_file = os.path.join(output_dir, img_fn + output_format)
             objects = coco_parser(img_fn)
 
             self._segmentation2png(objects, png_file, binary=binary)
