@@ -1,3 +1,4 @@
+import numpy as np
 import cv2
 
 
@@ -45,4 +46,24 @@ def show_pointobb(img, pointobb, color=(0, 0, 255)):
     """
     img = draw_rectangle_by_points(img, pointobb, color=color)
     
+    return img
+
+def show_thetaobb(img, thetaobb, color=(0, 0, 255)):
+    """show single theteobb
+
+    Args:
+        im (np.array): input image
+        thetaobb (list): [cx, cy, w, h, theta]
+        color (tuple, optional): draw color. Defaults to (0, 0, 255).
+
+    Returns:
+        np.array: image with thetaobb
+    """
+    cx, cy, w, h, theta = thetaobb
+
+    rect = ((cx, cy), (w, h), theta / np.pi * 180.0)
+    rect = cv2.boxPoints(rect)
+    rect = np.int0(rect)
+    cv2.drawContours(img, [rect], -1, color, 3)
+
     return img

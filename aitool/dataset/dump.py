@@ -45,9 +45,9 @@ class XMLDumperBase():
 class XMLDumperPlane(XMLDumperBase):
     """save objects to specific file format (plane competition, http://en.sw.chreos.org/)
     """
-    def __call__(self, objects, image_fn):
+    def __call__(self, objects, image_fn, team='CAPTAIN-VIPG-Plane'):
         basename = aitool.get_basename(image_fn)
-        root = ET.Element("annotations")
+        root = ET.Element("annotation")
         source = ET.SubElement(root, "source")
         ET.SubElement(source, "filename").text = basename + '.tif'
         ET.SubElement(source, "origin").text = 'GF2/GF3'
@@ -55,7 +55,7 @@ class XMLDumperPlane(XMLDumperBase):
         research = ET.SubElement(root, "research")
         ET.SubElement(research, "version").text = "4.0"
         ET.SubElement(research, "provider").text = "Wuhan University"
-        ET.SubElement(research, "author").text = "CAPTAIN-VIPG-Plane"
+        ET.SubElement(research, "author").text = team
         ET.SubElement(research, "pluginname").text = "Airplane Detection and Recognition in Optical Images"
         ET.SubElement(research, "pluginclass").text = "Detection"
         ET.SubElement(research, "time").text = "2020-07-2020-11"

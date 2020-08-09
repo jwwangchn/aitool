@@ -46,6 +46,24 @@ def thetaobb2pointobb(thetaobb):
 
     return pointobb
 
+def pointobb2thetaobb(pointobb):
+    """convert pointobb to thetaobb
+
+    Args:
+        pointobb (list): [x1, y1, x2, y2, x3, y3, x4, y4]
+
+    Returns:
+        list: [cx, cy, w, h, theta (rad/s)]
+    """
+    pointobb = np.int0(np.array(pointobb))
+    pointobb.resize(4, 2)
+    rect = cv2.minAreaRect(pointobb)
+    x, y, w, h, theta = rect[0][0], rect[0][1], rect[1][0], rect[1][1], rect[2]
+    theta = theta / 180.0 * np.pi
+    thetaobb = [x, y, w, h, theta]
+    
+    return thetaobb
+
 def pointobb2bbox(pointobb):
     """convert pointobb to bbox
 

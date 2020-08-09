@@ -168,6 +168,7 @@ class COCOParser():
         self.coco = COCO(ann_file)
         self.img_ids = self.coco.get_img_ids()
         self.cat_ids = self.coco.get_cat_ids()
+        self.categories = self.coco.dataset['categories']
         self.img_fns = []
 
         print("begin to parse the coco annotation file")
