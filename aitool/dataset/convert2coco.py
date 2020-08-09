@@ -97,7 +97,8 @@ class Convert2COCO():
     def _get_image_annotation_pairs(self, image_list):
         images, annotations = [], []
         ann_idx = 0
-        for img_idx, image_basename in enumerate(tqdm.tqdm(image_list)):
+        img_idx = 0
+        for image_basename in tqdm.tqdm(image_list):
             image_file = os.path.join(self.image_dir, image_basename + self.image_format)
             label_file = os.path.join(self.label_dir, image_basename + self.label_format)
 
@@ -123,6 +124,9 @@ class Convert2COCO():
                 data_keys = objects[0].keys()
                 if 'bbox' not in data_keys or 'category_id' not in data_keys:
                     raise RuntimeError(f"objects need to contain item of 'bbox' and 'category_id'")
+            else:
+                images.pop()
+                continue
             
             for data in objects:
                 ann_idx += 1
@@ -139,6 +143,8 @@ class Convert2COCO():
                     self.min_object_area = data['area']
 
                 annotations.append(data)
+
+            img_idx += 1
 
             if len(objects) > self.max_object_num_per_image:
                 self.max_object_num_per_image = len(objects)
