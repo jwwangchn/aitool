@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import cv2
 import json
 import random
@@ -36,10 +37,11 @@ class Convert2COCO():
         self.img_size = img_size
         self.with_groundtruth = with_groundtruth
         self.min_area = min_area
-
         self.small_object_counter = 0
+        
         self.max_object_num_per_image = 0
-        self.min_object_area = 2048 * 2048
+        self.min_object_length = 2048 * 2048
+        self.max_object_length = 0
 
         image_list = self._get_image_list(k_fold=k_fold)
 
@@ -99,6 +101,7 @@ class Convert2COCO():
         ann_idx = 0
         img_idx = 0
         for image_basename in tqdm.tqdm(image_list):
+            img_idx += 1
             image_file = os.path.join(self.image_dir, image_basename + self.image_format)
             label_file = os.path.join(self.label_dir, image_basename + self.label_format)
 
@@ -110,7 +113,7 @@ class Convert2COCO():
 
             images.append({'date_captured': 2020,
                            'file_name': image_basename + self.image_format,
-                           'id': img_idx + 1,
+                           'id': img_idx,
                            "url": "http://jwwangchn.cn",
                            "height": img_height,
                            "width": img_width})
@@ -126,12 +129,13 @@ class Convert2COCO():
                     raise RuntimeError(f"objects need to contain item of 'bbox' and 'category_id'")
             else:
                 images.pop()
+                img_idx -= 1
                 continue
             
             for data in objects:
                 ann_idx += 1
                 data['id'] = ann_idx
-                data['image_id'] = img_idx + 1
+                data['image_id'] = img_idx
                 if 'segmentation' in data:
                     if len(data['segmentation']) > 1:
                         data['segmentation'] = [data['segmentation']]
@@ -139,20 +143,22 @@ class Convert2COCO():
                     data["iscrowd"] = 0
                 if data['area'] < self.min_area:
                     self.small_object_counter += 1
-                if data['area'] < self.min_object_area:
-                    self.min_object_area = data['area']
+                
+                if np.sqrt(data['area']) < self.min_object_length:
+                    self.min_object_length = int(np.sqrt(data['area']))
+                if np.sqrt(data['area']) > self.max_object_length:
+                    self.max_object_length = int(np.sqrt(data['area']))
 
                 annotations.append(data)
-
-            img_idx += 1
 
             if len(objects) > self.max_object_num_per_image:
                 self.max_object_num_per_image = len(objects)
 
             if img_idx % (len(image_list) // 20) == 0 or img_idx == len(image_list) - 1:
-                if img_idx == len(image_list) - 1:
-                    print("Summary: ")
-                print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Number: {self.max_object_num_per_image}, Min Object Area: {self.min_object_area}")
+                print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Number: {self.max_object_num_per_image}, Min Object Area: {self.min_object_length}")
+            
+        print("Summary: ")
+        print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Per Image: {self.max_object_num_per_image}, Min Object Length: {self.min_object_length}, Max Object Length: {self.max_object_length}")
 
         return images, annotations
 

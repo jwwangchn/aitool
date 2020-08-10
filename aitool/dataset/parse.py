@@ -13,8 +13,10 @@ class PklParserBase():
     def __init__(self,
                  pkl_file,
                  ann_file,
+                 keep_boundary=True,
                  score_threshold=0.05,
                  min_area=10):
+        self.keep_boundary = keep_boundary
         self.score_threshold = score_threshold
         self.min_area = min_area
 
@@ -29,22 +31,25 @@ class PklParserBase():
         self.img_ids = coco.get_img_ids()
         self.cat_ids = coco.get_cat_ids()
         self.img_fns = []
+        self.img_sizes = []
 
         print("begin to convert pkl file to specific format")
         self.objects = dict()
         for idx, img_id in tqdm.tqdm(enumerate(self.img_ids)):
             info = coco.load_imgs([img_id])[0]
             img_name = aitool.get_basename(info['file_name'])
+            img_size = (info['height'], info['width'])
             self.img_fns.append(img_name)
             result = results[idx]
 
-            self.objects[img_name] = self._convert_items(result)
+            self.objects[img_name] = self._convert_items(result, img_size=img_size)
 
-    def _convert_items(self, result):
+    def _convert_items(self, result, img_size=(1024, 1024)):
         """convert the result (single image) in pkl file to specific format (default: Faster R-CNN, bbox) 
 
         Args:
             result (tuple): detection result of single image
+            img_size (tuple): image size (height, width)
 
         Return:
             list: converted objects
@@ -75,11 +80,12 @@ class PklParserBase():
 
 
 class PklParserMask(PklParserBase):
-    def _convert_items(self, result):
+    def _convert_items(self, result, img_size=(1024, 1024)):
         """convert the result (single image) in pkl file to specific format (Mask R-CNN, bbox + mask) 
 
         Args:
             result (tuple): detection result of single image
+            img_size (tuple): image size (height, width)
 
         Return:
             list: converted objects
@@ -113,11 +119,12 @@ class PklParserMask(PklParserBase):
 
 
 class PklParserMaskOBB(PklParserBase):
-    def _convert_items(self, result):
+    def _convert_items(self, result, img_size=(1024, 1024)):
         """convert the result (single image) in pkl file to specific format (Mask OBB, bbox + maskobb) 
 
         Args:
             result (tuple): detection result of single image
+            img_size (tuple): image size (height, width)
 
         Return:
             list: converted objects
@@ -145,8 +152,13 @@ class PklParserMaskOBB(PklParserBase):
                     segms[i]['counts'] = segms[i]['counts'].decode()
                 data['segmentation'] = segms[i]
                 thetaobb, pointobb = aitool.segm2rbbox(segms[i])
-                data['thetaobb'] = thetaobb
                 data['pointobb'] = pointobb
+                data['thetaobb'] = thetaobb
+                if not self.keep_boundary:
+                    cx_flag = thetaobb[0] < 0 or thetaobb[0] > img_size[1] - 1
+                    cy_flag = thetaobb[1] < 0 or thetaobb[1] > img_size[0] - 1
+                    if cx_flag or cy_flag:
+                        continue
                 objects.append(data)
 
         return objects
