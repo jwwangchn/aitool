@@ -128,6 +128,7 @@ class Convert2COCO():
                 if 'bbox' not in data_keys or 'category_id' not in data_keys:
                     raise RuntimeError(f"objects need to contain item of 'bbox' and 'category_id'")
             else:
+                # delete the image with zero object
                 images.pop()
                 img_idx -= 1
                 continue
@@ -154,8 +155,8 @@ class Convert2COCO():
             if len(objects) > self.max_object_num_per_image:
                 self.max_object_num_per_image = len(objects)
 
-            if img_idx % (len(image_list) // 20) == 0 or img_idx == len(image_list) - 1:
-                print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Number: {self.max_object_num_per_image}, Min Object Area: {self.min_object_length}")
+            # if img_idx % (len(image_list) // 20) == 0 or img_idx == len(image_list) - 1:
+            #     print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Number: {self.max_object_num_per_image}, Min Object Area: {self.min_object_length}")
             
         print("Summary: ")
         print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Per Image: {self.max_object_num_per_image}, Min Object Length: {self.min_object_length}, Max Object Length: {self.max_object_length}")

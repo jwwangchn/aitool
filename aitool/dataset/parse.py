@@ -142,8 +142,6 @@ class PklParserMaskOBB(PklParserBase):
             for i in range(bboxes.shape[0]):
                 data = dict()
                 data['bbox'] = aitool.xyxy2xywh(bboxes[i][:4])
-                if data['bbox'][2] * data['bbox'][3] < self.min_area:
-                    continue
                 data['score'] = float(bboxes[i][4])
                 if data['score'] < self.score_threshold:
                     continue
@@ -154,6 +152,8 @@ class PklParserMaskOBB(PklParserBase):
                 thetaobb, pointobb = aitool.segm2rbbox(segms[i])
                 data['pointobb'] = pointobb
                 data['thetaobb'] = thetaobb
+                if thetaobb[2] * thetaobb[3] < self.min_area:
+                    continue
                 if not self.keep_boundary:
                     cx_flag = thetaobb[0] < 0 or thetaobb[0] > img_size[1] - 1
                     cy_flag = thetaobb[1] < 0 or thetaobb[1] > img_size[0] - 1
