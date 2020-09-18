@@ -1,12 +1,13 @@
 import os
 import numpy as np
+import cv2
 import lxml.etree as ET
 
 import aitool
 
 
 class XMLDumperBase():
-    """save objects to specific file format
+    """save objects to xml format (voc)
     """
     def __init__(self,
                 output_dir,
@@ -85,3 +86,96 @@ class XMLDumperPlane(XMLDumperBase):
             
         tree = ET.ElementTree(root)
         tree.write(f"{self.output_dir}/{basename}.xml", pretty_print=True, xml_declaration=True, encoding='utf-8')
+
+
+class XMLDumperRoVOC(XMLDumperBase):
+    """save objects to rotated voc format
+    """
+    def __call__(self, objects, image_fn):
+        basename = aitool.get_basename(image_fn)
+        root = ET.Element("annotations")
+        ET.SubElement(root, "folder").text = 'ROVOC'
+        ET.SubElement(root, "filename").text = image_fn
+        
+        for data in objects:
+            obj = ET.SubElement(root, "object")
+            if self.classes is not None:
+                ET.SubElement(obj, "name").text = self.classes[data['category_id'] - 1]
+            else:
+                ET.SubElement(obj, "name").text = str(data['category_id'])
+            ET.SubElement(obj, "type").text = "robndbox"
+
+            bndbox = ET.SubElement(obj, "robndbox")
+            thetaobb = data['thetaobb']
+            cx, cy, w, h, theta = thetaobb
+            ET.SubElement(bndbox, "cx").text = str(cx)
+            ET.SubElement(bndbox, "cy").text = str(cy)
+            ET.SubElement(bndbox, "w").text = str(w)
+            ET.SubElement(bndbox, "h").text = str(h)
+            ET.SubElement(bndbox, "angle").text = str(theta)
+            
+        tree = ET.ElementTree(root)
+        tree.write(f"{self.output_dir}/{basename}.xml", pretty_print=True, xml_declaration=True, encoding='utf-8')
+        
+
+class ObjectDumperBase():
+    def __init__(self,
+                 output_dir,
+                 output_format='.png',
+                 min_area=5):
+        self.output_dir = output_dir
+        self.output_format = output_format
+        self.min_area = min_area
+
+    def __call__(self, img, objects, ori_image_fn):
+        image_basename = aitool.get_basename(ori_image_fn)
+        for data in objects:
+            bbox = [int(_) for _ in data['bbox']]
+            bbox = self._fix_bbox_bound(img, bbox)
+            x, y, w, h = bbox
+
+            if self._filter_invalid_bbox(bbox):
+                continue
+
+            img_save = img[y:y + h, x:x + w, :]
+            output_fn = [image_basename]
+            output_fn += [str(int(coord)) for coord in bbox]
+            
+            output_file = os.path.join(self.output_dir, "_".join(output_fn) + self.output_format)
+            cv2.imwrite(output_file, img_save)
+
+    def _filter_invalid_bbox(self, bbox):
+        x, y, w, h = bbox
+
+        if w * h < self.min_area or w < 2.0 or h < 2.0:
+            return True
+
+        return False
+
+    def _fix_bbox_bound(self, img, bbox):
+        height, width = img.shape[0], img.shape[1]
+        x, y, w, h = bbox
+        x = 0 if x < 0 else x
+        y = 0 if y < 0 else y
+        w = width - x - 1 if x + w > width - 1 else w
+        h = height - h - 1 if y + h > height - 1 else h
+
+        return [x, y, w, h]
+
+class ObjectDumperPlane(ObjectDumperBase):
+    def __call__(self, img, objects, ori_image_fn):
+        image_basename = aitool.get_basename(ori_image_fn)
+        for data in objects:
+            bbox = [int(_) for _ in data['bbox']]
+            bbox = self._fix_bbox_bound(img, bbox)
+            pointobb = data['pointobb']
+            x, y, w, h = bbox
+
+            if self._filter_invalid_bbox(bbox):
+                continue
+
+            img_save = img[y:y + h, x:x + w, :]
+            output_fn = [image_basename]
+            output_fn += [str(int(coord)) for coord in pointobb]
+            output_file = os.path.join(self.output_dir, "_".join(output_fn) + self.output_format)
+            cv2.imwrite(output_file, img_save)
