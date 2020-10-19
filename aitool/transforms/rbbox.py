@@ -64,6 +64,20 @@ def pointobb2thetaobb(pointobb):
     
     return thetaobb
 
+def thetaobb2bbox(thetaobb):
+    """convert thetaobb to bbox
+
+    Args:
+        thetaobb (list): [cx, cy, w, h, theta]
+
+    Returns:
+        list: [xmin, ymin, xmax, ymax]
+    """
+    pointobb = thetaobb2pointobb(thetaobb)
+    bbox = pointobb2bbox(pointobb)
+
+    return bbox
+
 def pointobb2bbox(pointobb):
     """convert pointobb to bbox
 
@@ -99,3 +113,22 @@ def bbox2pointobb(bbox):
     pointobb = [x1, y1, x2, y2, x3, y3, x4, y4]
     
     return pointobb
+
+def pointobb_best_point_sort(pointobb):
+    """Find the "best" point and sort all points as the order that best point is first point
+
+    Args:
+        pointobb (list): unsorted points
+
+    Returns:
+        list: sorted points
+    """
+    xmin, ymin, xmax, ymax = pointobb2bbox(pointobb)
+    reference_bbox = [xmin, ymin, xmax, ymin, xmax, ymax, xmin, ymax]
+    reference_bbox = np.array(reference_bbox)
+    normalize = np.array([1.0, 1.0] * 4)
+    combinate = [np.roll(pointobb, 0), np.roll(pointobb, 2), np.roll(pointobb, 4), np.roll(pointobb, 6)]
+    distances = np.array([np.sum(((coord - reference_bbox) / normalize)**2) for coord in combinate])
+    sorted = distances.argsort()
+
+    return combinate[sorted[0]].tolist()

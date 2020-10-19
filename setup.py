@@ -109,7 +109,7 @@ if __name__ == '__main__':
         license='Apache License 2.0',
         setup_requires=['cython', 'numpy'],
         tests_require=['pytest'],
-        install_requires=['numpy', 'matplotlib', 'six', 'terminaltables', 'shapely', 'geojson', 'scikit-image', 'geopandas', 'rasterio'
+        install_requires=['numpy', 'matplotlib', 'six', 'terminaltables', 'shapely', 'geojson', 'scikit-image', 'geopandas', 'rasterio', 'tqdm', 'lxml'
         ],
         cmdclass={'build_ext': BuildExtension},
         zip_safe=False)

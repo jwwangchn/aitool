@@ -16,6 +16,7 @@ class Convert2COCO():
                 image_format='.png',
                 label_format='.txt',
                 imageset_file=None,
+                expand_image_list=None,
                 dataset_info=None,
                 dataset_licenses=None,
                 dataset_type='instance',
@@ -43,6 +44,8 @@ class Convert2COCO():
         self.min_object_length = 2048 * 2048
         self.max_object_length = 0
 
+        self.expand_image_list = self._parse_expand_image_list(expand_image_list)
+
         image_list = self._get_image_list(k_fold=k_fold)
 
         if k_fold == 0:
@@ -53,6 +56,19 @@ class Convert2COCO():
 
                 val_output_file = output_file[0:-5] + f'_K{fold_idx + 1}' + output_file[-5:]
                 self._dump_coco_json(sub_image_list, val_output_file)
+
+    def _parse_expand_image_list(self, expand_image_list):
+        if isinstance(expand_image_list, list):
+            return expand_image_list
+        elif isinstance(expand_image_list, str):
+            return_list = []
+            with open(expand_image_list, 'r') as f:
+                lines = f.readlines()
+            for line in lines:
+                return_list.append(aitool.get_basename(line.strip()))
+            return return_list
+        else:
+            raise NotImplementedError(f"don't support the type of expand_image_list: {type(expand_image_list)}")
 
     def _dump_coco_json(self, image_list, output_file):
         images, annotations = self._get_image_annotation_pairs(image_list)
@@ -91,7 +107,10 @@ class Convert2COCO():
             random.shuffle(image_list)
         
         if k_fold == 0:
-            return image_list
+            if self.expand_image_list is None:
+                return image_list
+            else:
+                return image_list + self.expand_image_list
         else:
             splitted_image_list = self._split_image_list(image_list, k_fold)
             return splitted_image_list
@@ -128,6 +147,7 @@ class Convert2COCO():
                 if 'bbox' not in data_keys or 'category_id' not in data_keys:
                     raise RuntimeError(f"objects need to contain item of 'bbox' and 'category_id'")
             else:
+                # delete the image with zero object
                 images.pop()
                 img_idx -= 1
                 continue

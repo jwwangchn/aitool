@@ -1,5 +1,6 @@
 import numpy as np
 import tqdm
+import xml.etree.ElementTree as ET
 from pycocotools.coco import COCO
 import pycocotools.mask as maskUtils
 
@@ -133,6 +134,8 @@ class PklParserMaskOBB(PklParserBase):
 
         det, seg = result
         for label in range(len(det)):
+            if label > len(seg) - 1:
+                continue
             bboxes = det[label]
             if isinstance(seg, tuple):
                 segms = seg[0][label]
@@ -142,8 +145,6 @@ class PklParserMaskOBB(PklParserBase):
             for i in range(bboxes.shape[0]):
                 data = dict()
                 data['bbox'] = aitool.xyxy2xywh(bboxes[i][:4])
-                if data['bbox'][2] * data['bbox'][3] < self.min_area:
-                    continue
                 data['score'] = float(bboxes[i][4])
                 if data['score'] < self.score_threshold:
                     continue
@@ -154,6 +155,8 @@ class PklParserMaskOBB(PklParserBase):
                 thetaobb, pointobb = aitool.segm2rbbox(segms[i])
                 data['pointobb'] = pointobb
                 data['thetaobb'] = thetaobb
+                if thetaobb[2] * thetaobb[3] < self.min_area:
+                    continue
                 if not self.keep_boundary:
                     cx_flag = thetaobb[0] < 0 or thetaobb[0] > img_size[1] - 1
                     cy_flag = thetaobb[1] < 0 or thetaobb[1] > img_size[0] - 1
@@ -218,3 +221,71 @@ class COCOParser():
         else:
             print("{} is not in coco file".format(image_fn))
             return []
+
+
+def xml_parser_plane(label_file):
+    objects = []
+    tree = ET.parse(label_file)
+    root = tree.getroot()
+    objects_handle = root.find('objects')
+    if objects_handle is None:
+        return []
+    for single_object in objects_handle.findall('object'):
+        points = single_object.find('points')
+        data = {}
+
+        pointobb = []
+        for point in points[:-1]:
+            coords = [float(coord) for coord in point.text.split(',')]
+            pointobb += coords
+
+        bbox = aitool.pointobb2bbox(pointobb)
+        bbox = aitool.xyxy2xywh(bbox)
+
+        data['area'] = bbox[2] * bbox[3]
+        data['segmentation'] = [pointobb]
+        data['pointobb'] = pointobb
+        data['thetaobb'] = aitool.pointobb2thetaobb(pointobb)
+        data['bbox'] = bbox
+        data['category_id'] = single_object.find('possibleresult').find('name').text
+        data['class'] = single_object.find('possibleresult').find('name').text
+        try:
+            data['score'] = single_object.find('possibleresult').find('probability').text
+        except:
+            print("There is not probability key")
+        
+        objects.append(data)
+
+    return objects
+
+def xml_parser_rovoc(label_file):
+    objects = []
+    tree = ET.parse(label_file)
+    root = tree.getroot()
+
+    for single_object in root.findall('object'):
+        robndbox = single_object.find('robndbox')
+        data = {}
+
+        cx = float(robndbox.find('cx').text)
+        cy = float(robndbox.find('cy').text)
+        w = float(robndbox.find('w').text)
+        h = float(robndbox.find('h').text)
+        theta = float(robndbox.find('angle').text)
+
+        thetaobb = [cx, cy, w, h, theta]
+
+        pointobb = aitool.thetaobb2pointobb(thetaobb)
+        bbox = aitool.thetaobb2bbox(thetaobb)
+        bbox = aitool.xyxy2xywh(bbox)
+
+        data['area'] = bbox[2] * bbox[3]
+        data['segmentation'] = [pointobb]
+        data['pointobb'] = pointobb
+        data['thetaobb'] = thetaobb
+        data['bbox'] = bbox
+        data['category_id'] = 1
+        
+        objects.append(data)
+
+    return objects
