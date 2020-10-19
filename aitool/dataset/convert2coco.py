@@ -16,6 +16,7 @@ class Convert2COCO():
                 image_format='.png',
                 label_format='.txt',
                 imageset_file=None,
+                expand_image_list=None,
                 dataset_info=None,
                 dataset_licenses=None,
                 dataset_type='instance',
@@ -43,6 +44,8 @@ class Convert2COCO():
         self.min_object_length = 2048 * 2048
         self.max_object_length = 0
 
+        self.expand_image_list = self._parse_expand_image_list(expand_image_list)
+
         image_list = self._get_image_list(k_fold=k_fold)
 
         if k_fold == 0:
@@ -53,6 +56,19 @@ class Convert2COCO():
 
                 val_output_file = output_file[0:-5] + f'_K{fold_idx + 1}' + output_file[-5:]
                 self._dump_coco_json(sub_image_list, val_output_file)
+
+    def _parse_expand_image_list(self, expand_image_list):
+        if isinstance(expand_image_list, list):
+            return expand_image_list
+        elif isinstance(expand_image_list, str):
+            return_list = []
+            with open(expand_image_list, 'r') as f:
+                lines = f.readlines()
+            for line in lines:
+                return_list.append(aitool.get_basename(line.strip()))
+            return return_list
+        else:
+            raise NotImplementedError(f"don't support the type of expand_image_list: {type(expand_image_list)}")
 
     def _dump_coco_json(self, image_list, output_file):
         images, annotations = self._get_image_annotation_pairs(image_list)
@@ -91,7 +107,10 @@ class Convert2COCO():
             random.shuffle(image_list)
         
         if k_fold == 0:
-            return image_list
+            if self.expand_image_list is None:
+                return image_list
+            else:
+                return image_list + self.expand_image_list
         else:
             splitted_image_list = self._split_image_list(image_list, k_fold)
             return splitted_image_list
@@ -155,8 +174,8 @@ class Convert2COCO():
             if len(objects) > self.max_object_num_per_image:
                 self.max_object_num_per_image = len(objects)
 
-            # if img_idx % (len(image_list) // 20) == 0 or img_idx == len(image_list) - 1:
-            #     print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Number: {self.max_object_num_per_image}, Min Object Area: {self.min_object_length}")
+            if img_idx % (len(image_list) // 20) == 0 or img_idx == len(image_list) - 1:
+                print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Number: {self.max_object_num_per_image}, Min Object Area: {self.min_object_length}")
             
         print("Summary: ")
         print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Per Image: {self.max_object_num_per_image}, Min Object Length: {self.min_object_length}, Max Object Length: {self.max_object_length}")
