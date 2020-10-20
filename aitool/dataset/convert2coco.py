@@ -67,6 +67,8 @@ class Convert2COCO():
             for line in lines:
                 return_list.append(aitool.get_basename(line.strip()))
             return return_list
+        elif expand_image_list is None:
+            return expand_image_list
         else:
             raise NotImplementedError(f"don't support the type of expand_image_list: {type(expand_image_list)}")
 
