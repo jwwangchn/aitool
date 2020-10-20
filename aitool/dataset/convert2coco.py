@@ -130,7 +130,12 @@ class Convert2COCO():
                 img_height, img_width = self.img_size
             else:
                 img = cv2.imread(image_file)
-                img_height, img_width = img.shape[0], img.shape[1]
+                if img is not None:
+                    img_height, img_width = img.shape[0], img.shape[1]
+                else:
+                    print(f"This image {image_file} is empty")
+                    img_idx -= 1
+                    continue
 
             images.append({'date_captured': 2020,
                            'file_name': image_basename + self.image_format,
