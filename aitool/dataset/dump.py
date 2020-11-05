@@ -179,3 +179,47 @@ class ObjectDumperPlane(ObjectDumperBase):
             output_fn += [str(int(coord)) for coord in pointobb]
             output_file = os.path.join(self.output_dir, "_".join(output_fn) + self.output_format)
             cv2.imwrite(output_file, img_save)
+
+class TXTDumperBase():
+    """save objects to txt format (xmin, ymin, xmax, ymax, class)
+    """
+    def __init__(self,
+                output_dir,
+                classes=None):
+        self.output_dir = output_dir
+        aitool.mkdir_or_exist(self.output_dir)
+        
+        self.classes = classes
+
+    def __call__(self, objects, image_fn):
+        basename = aitool.get_basename(image_fn)
+        with open(f"{self.output_dir}/{basename}.txt", 'w') as f:
+            for data in objects:
+                if self.classes is not None:
+                    object_info = [self.classes[data['category_id'] - 1]]
+                else:
+                    object_info = [str(data['category_id'])]
+
+                bbox = data['bbox']
+                xmin, ymin, xmax, ymax = aitool.xywh2xyxy(bbox)
+                object_info.extend([str(xmin), str(ymin), str(xmax), str(ymax)])
+                
+                f.write(" ".join(object_info))
+
+
+class TXTDumperBase_HJJ_Ship(TXTDumperBase):
+    """save objects to txt format (class, x1, y1, x2, y2, x3, y3, x4, y4)
+    """
+    def __call__(self, objects, image_fn):
+        basename = aitool.get_basename(image_fn)
+        with open(f"{self.output_dir}/{basename}.txt", 'w') as f:
+            for data in objects:
+                if self.classes is not None:
+                    object_info = [self.classes[data['category_id'] - 1]]
+                else:
+                    object_info = [str(data['category_id'])]
+
+                pointobb = data['pointobb']
+                object_info.extend([str(_) for _ in pointobb] + ['\n'])
+                
+                f.write(" ".join(object_info))
