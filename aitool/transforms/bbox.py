@@ -1,3 +1,7 @@
+import numpy as np
+from shapely.geometry import Polygon
+
+
 def xyxy2cxcywh(bbox):
     """bbox format convert
 
@@ -61,3 +65,29 @@ def xyxy2xywh(bbox):
     h = ymax - ymin
     
     return [xmin, ymin, w, h]
+
+def bbox2polygon(bbox):
+    """convert single bbox to polygon
+
+    Arguments:
+        bbox {list} -- contains coordinates of bounding box ([xmin, ymin, xmax, ymax])
+    """
+    bbox_x = bbox[0::2]
+    bbox_y = bbox[1::2]
+    bbox_coord = [(x, y) for x, y in zip(bbox_x, bbox_y)]
+
+    polygon = Polygon(bbox_coord)
+
+    return polygon
+
+def polygon2bbox(polygon):
+    """convet polygon to bbox
+
+    Arguments:
+        polygon {Polygon} -- input polygon (single polygon)
+
+    Returns:
+        list -- converted mask ([xmin, ymin, xmax, ymax])
+    """
+    bbox = np.array(polygon.exterior.coords, dtype=int)[:-1].ravel().tolist()
+    return bbox
