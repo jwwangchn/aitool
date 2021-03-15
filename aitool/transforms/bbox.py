@@ -1,6 +1,8 @@
 import numpy as np
 from shapely.geometry import Polygon
 
+import aitool
+
 
 def xyxy2cxcywh(bbox):
     """bbox format convert
@@ -72,8 +74,9 @@ def bbox2polygon(bbox):
     Arguments:
         bbox {list} -- contains coordinates of bounding box ([xmin, ymin, xmax, ymax])
     """
-    bbox_x = bbox[0::2]
-    bbox_y = bbox[1::2]
+    pointobb = aitool.bbox2pointobb(bbox)
+    bbox_x = pointobb[0::2]
+    bbox_y = pointobb[1::2]
     bbox_coord = [(x, y) for x, y in zip(bbox_x, bbox_y)]
 
     polygon = Polygon(bbox_coord)
@@ -81,7 +84,7 @@ def bbox2polygon(bbox):
     return polygon
 
 def polygon2bbox(polygon):
-    """convet polygon to bbox
+    """convet polygon to single bbox
 
     Arguments:
         polygon {Polygon} -- input polygon (single polygon)
@@ -89,5 +92,7 @@ def polygon2bbox(polygon):
     Returns:
         list -- converted mask ([xmin, ymin, xmax, ymax])
     """
-    bbox = np.array(polygon.exterior.coords, dtype=int)[:-1].ravel().tolist()
+    pointobb = np.array(polygon.exterior.coords, dtype=int)[:-1].ravel().tolist()
+    bbox = aitool.pointobb2bbox(pointobb)
+    
     return bbox
