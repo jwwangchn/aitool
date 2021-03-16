@@ -24,12 +24,27 @@ def get_file_list(path, postfix='.png'):
         postfix (str, optional): the postfix of return file. Defaults to '.png'.
 
     Returns:
-        list: file paths
+        list: full file paths
     """
 
     file_list = glob.glob(f"{path}/*{postfix}")
 
     return file_list
+
+def get_basename_list(path, postfix='.png'):
+    """get specific filename from the input path
+
+    Args:
+        path (str): input path
+        postfix (str, optional): the postfix of return file. Defaults to '.png'.
+
+    Returns:
+        list: full file paths
+    """
+
+    basename_list = [get_basename(_) for _ in os.listdir(path)]
+
+    return basename_list
 
 def mkdir_or_exist(dir_name, mode=0o777):
     """make or judge the exist of dir
