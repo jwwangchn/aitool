@@ -1,9 +1,16 @@
 import cv2
+import numpy as np
 import matplotlib.pyplot as plt
 
 
 def show_coco_mask(coco, image_file, anns, output_file=None):
-    img = cv2.imread(image_file)
+    if isinstance(image_file, str):
+        img = cv2.imread(image_file)
+    elif isinstance(image_file, np.ndarray):
+        img = image_file.copy()
+    else:
+        raise("Wrong input image type!", type(image_file))
+
     plt.figure(figsize=(8, 8))
     plt.imshow(img)
     
