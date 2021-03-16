@@ -3,6 +3,7 @@ import tqdm
 import xml.etree.ElementTree as ET
 from pycocotools.coco import COCO
 import pycocotools.mask as maskUtils
+from collections import defaultdict
 
 import mmcv
 import aitool
@@ -36,6 +37,7 @@ class PklParserBase():
 
         print("begin to convert pkl file to specific format")
         self.objects = dict()
+        self.objects_with_id = dict()
         for idx, img_id in tqdm.tqdm(enumerate(self.img_ids)):
             info = coco.load_imgs([img_id])[0]
             img_name = aitool.get_basename(info['file_name'])
@@ -44,6 +46,7 @@ class PklParserBase():
             result = results[idx]
 
             self.objects[img_name] = self._convert_items(result, img_size=img_size)
+            self.objects_with_id[img_id] = self.objects[img_name].copy()
 
     def _convert_items(self, result, img_size=(1024, 1024)):
         """convert the result (single image) in pkl file to specific format (default: Faster R-CNN, bbox) 
@@ -187,7 +190,7 @@ class COCOParser():
         self.img_fns = []
 
         print("begin to parse the coco annotation file")
-        self.objects = dict()
+        self.objects, self.objects_with_id, self.img_name_with_id = dict(), dict(), dict()
         for img_id in tqdm.tqdm(self.img_ids):
             img_info = self.coco.load_imgs([img_id])[0]
             img_name = aitool.get_basename(img_info['file_name'])
@@ -196,6 +199,8 @@ class COCOParser():
             ann_ids = self.coco.get_ann_ids(img_ids=[img_id])
             ann_info = self.coco.load_anns(ann_ids)
             self.objects[img_name] = self._convert_items(ann_info, img_info)
+            self.objects_with_id[img_id] = self.objects[img_name].copy()
+            self.img_name_with_id[img_name] = img_id
     
     def _convert_items(self, ann_info, img_info):
         objects = []
@@ -222,6 +227,68 @@ class COCOParser():
             print("{} is not in coco file".format(image_fn))
             return []
 
+class COCOParserTinyPerson(COCOParser):
+    def __init__(self, 
+                 ann_file, 
+                 classes=[''],
+                 data_keys=['bbox', 'category_id', 'segmentation']):
+        """parse coco annotation file of tinyperson dataset
+
+        Args:
+            ann_file (str): coco annotation file
+            classes (list, optional): class ids. Defaults to [''].
+            data_keys (list, optional): parse which items. Defaults to ['bbox', 'category_id', 'segmentation'].
+        """
+        self.data_keys = data_keys
+        self.coco = COCO(ann_file)
+        self.img_ids = self.coco.get_img_ids()
+        self.cat_ids = self.coco.get_cat_ids()
+        self.categories = self.coco.dataset['categories']
+        self.img_fns = []
+
+        print("begin to parse the coco annotation file")
+        self.objects = dict()
+        self.objects_with_id = dict()
+        self.img_name_with_id = dict()
+        for img_id in tqdm.tqdm(self.img_ids):
+            img_info = self.coco.load_imgs([img_id])[0]
+            if 'corner' in img_info:
+                img_corner = [str(int(_)) for _ in img_info['corner']]
+                img_name = aitool.get_basename(img_info['file_name']) + '__' + "_".join(img_corner)
+            else:
+                img_name = aitool.get_basename(img_info['file_name'])
+
+            self.img_fns.append(img_name)
+
+            ann_ids = self.coco.get_ann_ids(img_ids=[img_id])
+            ann_info = self.coco.load_anns(ann_ids)
+            self.objects[img_name] = self._convert_items(ann_info, img_info)
+            self.objects_with_id[img_id] = self.objects[img_name].copy()
+            self.img_name_with_id[img_name] = img_id
+    
+    def _convert_items(self, ann_info, img_info):
+        objects = []
+
+        img_height, img_width = img_info['height'], img_info['width']
+        if 'corner' in img_info:
+            img_corner = img_info['corner']
+        else:
+            img_corner = None
+        for ann in ann_info:
+            data = dict()
+            for data_key in self.data_keys:
+                if data_key in ann:
+                    data[data_key] = ann[data_key]
+                else:
+                    raise RuntimeError(f'coco ann file does not contain {data_key}')
+
+            data['img_height'], data['img_width'] = img_height, img_width
+            if img_corner is not None:
+                data['img_corner'] = img_corner
+            
+            objects.append(data)
+
+        return objects
 
 def xml_parser_plane(label_file):
     objects = []
@@ -289,3 +356,29 @@ def xml_parser_rovoc(label_file):
         objects.append(data)
 
     return objects
+
+
+class COCOJsonResultParser():
+    def __init__(self, 
+                 res_file):
+        """parse detection results of coco format
+
+        Args:
+            res_file (str): detection result file of coco format.
+        """
+        self.res_file = res_file
+        self.results = mmcv.load(res_file)
+
+        print("begin to parse the detection result json file")
+        self.objects = defaultdict(list)
+        for single_det in tqdm.tqdm(self.results):
+            image_id = single_det['image_id'] 
+
+            self.objects[image_id].append(single_det)
+
+    def __call__(self, image_id):
+        if image_id in self.objects.keys():
+            return self.objects[image_id]
+        else:
+            print("Image id {} is not in coco result file".format(image_id))
+            return []
