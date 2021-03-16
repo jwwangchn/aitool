@@ -1,6 +1,8 @@
 import numpy as np
 import geopandas
 
+import aitool
+
 
 def get_confusion_matrix_indexes(gt_bboxes, pred_bboxes):
     """calculate confusion matrix
@@ -59,6 +61,9 @@ def get_confusion_matrix_indexes(gt_bboxes, pred_bboxes):
     objects['pred_TP_indexes'] = pred_TP_indexes
     objects['gt_FN_indexes'] = gt_FN_indexes
     objects['pred_FP_indexes'] = pred_FP_indexes
+
+    objects['gt_polygons'] = gt_polygons
+    objects['pred_polygons'] = pred_polygons
 
     objects['gt_polygons_matched'] = np.array(gt_polygons_origin)[gt_TP_indexes].tolist()
     objects['pred_polygons_matched'] = np.array(pred_polygons_origin)[pred_TP_indexes].tolist()
