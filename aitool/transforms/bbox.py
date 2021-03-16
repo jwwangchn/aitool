@@ -73,6 +73,9 @@ def bbox2polygon(bbox):
 
     Arguments:
         bbox {list} -- contains coordinates of bounding box ([xmin, ymin, xmax, ymax])
+
+    Returns:
+        Polygon: converted Polygon
     """
     pointobb = aitool.bbox2pointobb(bbox)
     bbox_x = pointobb[0::2]
