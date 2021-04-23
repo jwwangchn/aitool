@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 import tqdm
 import xml.etree.ElementTree as ET
 from pycocotools.coco import COCO
@@ -382,3 +383,50 @@ class COCOJsonResultParser():
         else:
             print("Image id {} is not in coco result file".format(image_id))
             return []
+
+def mask_parse(mask_file,
+               subclasses=(1, 3),
+               clean_polygon_flag=False,
+               with_opencv=True):
+    """parse mask image (png image etc.)
+
+    Args:
+        mask_file (str or np.array): mask image
+        subclasses (tuple, optional): parse which class. Defaults to (1, 3).
+
+    Returns:
+        list: list of objects
+    """
+    if isinstance(mask_file, str):
+        mask_image = cv2.imread(mask_file)
+    else:
+        mask_image = mask_file
+
+    if mask_image is None:
+        if isinstance(mask_file, str):
+            print("Can not open this mask file: {}".format(mask_file))
+        else:
+            print("Can not handle mask image (np.array), it is empty")
+        return []
+
+    sub_mask = aitool.generate_subclass_mask(mask_image, subclasses=subclasses)
+    if with_opencv:
+        polygons = aitool.generate_polygon_opencv(sub_mask)
+    else:
+        polygons = aitool.generate_polygon(sub_mask)
+
+    objects = []
+    for polygon in polygons:
+        object_struct = dict()
+        if clean_polygon_flag:
+            if not polygon.is_valid:
+                continue
+            if polygon.geom_type not in ['Polygon', 'MultiPolygon']:
+                continue
+        object_struct['mask'] = aitool.polygon2mask(polygon)
+        if len(object_struct['mask']) == 0:
+            continue
+        object_struct['polygon'] = polygon
+        objects.append(object_struct)
+
+    return objects
