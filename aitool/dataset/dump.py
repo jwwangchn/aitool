@@ -255,3 +255,26 @@ class JSONDumperBase():
 
         with open(json_file, "w") as jsonfile:
             json.dump(json_data, jsonfile, indent=4)
+
+
+class JSONDumperBONAI(JSONDumperBase):
+    def _convert_data(self, label_info, image_info):
+        if image_info is not None:
+            self.image_info = image_info
+
+        bboxes = label_info['bbox']
+        segmentations = label_info['segmentation']
+
+        anns = []
+        for bbox, segmentation in zip(bboxes, segmentations):
+            objects = {}
+            objects['bbox'] = bbox
+            objects['class'] = 1
+            objects['segmentation'] = segmentation
+
+            anns.append(objects)
+
+        json_data = {"image": self.image_info,
+                     "annotations": anns}
+
+        return json_data
