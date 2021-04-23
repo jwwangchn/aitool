@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import cv2
+import json
 import lxml.etree as ET
 
 import aitool
@@ -223,3 +224,34 @@ class TXTDumperBase_HJJ_Ship(TXTDumperBase):
                 object_info.extend([str(_) for _ in pointobb] + ['\n'])
                 
                 f.write(" ".join(object_info))
+
+
+class JSONDumperBase():
+    """save data to a json file
+    """
+    def __init__(self):
+        self.image_info = {"No image info!"}
+
+    def _convert_data(self, label_info, image_info):
+        if image_info is not None:
+            self.image_info = image_info
+
+        anns = []
+        for label in label_info:
+            objects = {}
+            objects['bbox'] = label['bbox']
+            objects['class'] = label['class']
+            objects['segmentation'] = label['segmentation']
+
+            anns.append(objects)
+
+        json_data = {"image": self.image_info,
+                     "annotations": anns}
+
+        return json_data
+
+    def dumper(self, label_info, image_info, json_file):
+        json_data = self._convert_data(label_info, image_info)
+
+        with open(json_file, "w") as jsonfile:
+            json.dump(json_data, jsonfile, indent=4)
