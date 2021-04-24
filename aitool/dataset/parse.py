@@ -430,3 +430,19 @@ def mask_parse(mask_file,
         objects.append(object_struct)
 
     return objects
+
+
+class JSONParserBase():
+    """parse json file
+    """
+    def _convert_data(self):
+        pass
+
+    def __call__(self, json_file):
+        data = mmcv.load(json_file)
+        image_info = data['image']
+        anns = data['annotations']
+        
+        return image_info, anns
+
+        
