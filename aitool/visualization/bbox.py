@@ -21,9 +21,9 @@ def draw_bbox(img, bbox, color=(0, 0, 255), line_width=2):
     return img
 
 def draw_confusion_matrix(img, gt_bboxes, pred_bboxes, with_gt_TP=False, line_width=2):
-    colors = {'gt_TP':   (255, 255, 0),     # blue
+    colors = {'gt_TP':   (255, 255, 0),     # yellow
               'pred_TP': (0, 255, 0),       # green
-              'FP':      (0, 255, 255),     # yellow
+              'FP':      (0, 255, 255),     # blue
               'FN':      (255, 0, 0)}       # red
 
     objects = aitool.get_confusion_matrix_indexes(gt_bboxes, pred_bboxes)

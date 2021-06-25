@@ -181,7 +181,7 @@ class Convert2COCO():
             if len(objects) > self.max_object_num_per_image:
                 self.max_object_num_per_image = len(objects)
 
-            if img_idx % (len(image_list) // 20) == 0 or img_idx == len(image_list) - 1:
+            if img_idx % (len(image_list) // (len(image_list) if len(image_list) > 20 else len(image_list))) == 0 or img_idx == len(image_list) - 1:
                 print(f"Image ID: {img_idx}, Instance ID: {ann_idx}, Small Object Counter: {self.small_object_counter}, Max Object Number: {self.max_object_num_per_image}, Min Object Area: {self.min_object_length}")
             
         print("Summary: ")
